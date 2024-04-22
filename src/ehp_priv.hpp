@@ -262,7 +262,8 @@ class lsda_type_table_entry_t: public LSDATypeTableEntry_t, private eh_frame_uti
 		);
 
 	void print() const;
-	
+
+    static uint64_t get_tt_encoding_size(uint64_t tt_encoding);
 };
 
 template <int ptrsize>

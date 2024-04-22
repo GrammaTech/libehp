@@ -37,6 +37,12 @@ myenv=myenv.Clone(CPPPATH=Split(cpppath))
 myenv.Append(CXXFLAGS = " -std=c++11 -Wall -Werror -fmax-errors=1 -g ")
 
 lib=myenv.Program("test.exe",  Split(files), LIBPATH=Split(LIBPATH), LIBS=Split(LIBS))
-Default(lib)
 
-Return('lib')
+myenv=env.Clone(CPPPATH=Split(cpppath))
+myenv.Append(CXXFLAGS = " -std=c++11 -Wall -Wno-deprecated -Wno-reorder -g ")
+
+lib2=myenv.Program("test_des.exe",  Split("test_des.cpp"), LIBPATH=Split(LIBPATH), LIBS=Split(LIBS))
+
+Default([lib, lib2])
+
+Return(['lib', 'lib2'])

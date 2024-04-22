@@ -1385,6 +1385,28 @@ uint64_t lsda_type_table_entry_t<ptrsize>::getEncoding() const { return tt_encod
 template <int ptrsize>
 uint64_t lsda_type_table_entry_t<ptrsize>::getTTEncodingSize() const { return tt_encoding_size; }
 
+template <int ptrsize>
+uint64_t lsda_type_table_entry_t<ptrsize>::get_tt_encoding_size(const uint64_t p_tt_encoding)
+{
+    uint64_t encoding_size = 0;
+    switch(p_tt_encoding & 0xf) // get just the size field
+    {
+        case DW_EH_PE_udata4:
+        case DW_EH_PE_sdata4:
+            encoding_size=4;
+            break;
+        case DW_EH_PE_udata8:
+        case DW_EH_PE_sdata8:
+            encoding_size=8;
+            break;
+        case DW_EH_PE_absptr:
+            encoding_size=ptrsize;
+            break;
+        default:
+            throw_assert(0);
+    }
+    return encoding_size;
+}
 
 template <int ptrsize>
 bool lsda_type_table_entry_t<ptrsize>::parse(
@@ -1401,22 +1423,8 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 	const auto tt_encoding_sans_indirect = tt_encoding&(~DW_EH_PE_indirect);
 	const auto tt_encoding_sans_indir_sans_pcrel = static_cast<uint8_t>(tt_encoding_sans_indirect & (~DW_EH_PE_pcrel));
 	const auto has_pcrel = (tt_encoding & DW_EH_PE_pcrel) == DW_EH_PE_pcrel;
-	switch(tt_encoding & 0xf) // get just the size field
-	{
-		case DW_EH_PE_udata4:
-		case DW_EH_PE_sdata4:
-			tt_encoding_size=4;
-			break;
-		case DW_EH_PE_udata8:
-		case DW_EH_PE_sdata8:
-			tt_encoding_size=8;
-			break;
-		case DW_EH_PE_absptr:
-			tt_encoding_size=ptrsize;
-			break;
-		default:
-			throw_assert(0);
-	}
+    tt_encoding_size = get_tt_encoding_size(p_tt_encoding);
+
 	const auto orig_act_pos=uint64_t(tt_pos+(-static_cast<int64_t>(index)*tt_encoding_size));
 	auto act_pos=uint64_t(tt_pos+(-static_cast<int64_t>(index)*tt_encoding_size));
 	if(this->read_type_with_encoding(tt_encoding_sans_indir_sans_pcrel, pointer_to_typeinfo, act_pos, data, max, data_addr, is_be))
@@ -1695,13 +1703,39 @@ bool lsda_t<ptrsize>::parse_lsda(
 					if(parse_and_insert_tt_entry(type_filter))
 						return true;
 				}
-				else if(type_filter<0)
+                else if(type_filter==-1)
 				{
-					// a type filter < 0 indicates a dynamic exception specification (DES) is in play.
-					// a DES is where the runtime enforces whether exceptions can be thrown or not, 
-					// and if an unexpected exception is thrown, a separate handler is invoked.
-					// these are not common and even less likely to be needed for correct execution.
-					// we ignore for now.  A warning is printed if they are found in build_ir. 
+                    // When the type filter is -1, it means that the catch
+                    // handler can handle exceptions of any type.
+                    // It typically indicates a Dynamic Exception Specification
+                    // (DES) is in play. DES was a feature in C++ that allowed
+                    // a function to declare the types of exceptions it could
+                    // potentially throw.
+                    //
+                    // Although this feature is deprecated in C++11, for
+                    // binaries built with older versions of C++, we handle
+                    // such case here by parsing all the entries in the type
+                    // table.
+
+                    // First of all, make sure that there is only one action
+                    // table entry.
+                    size_t at_entry_count = cs_tab_entry.getActionTableInternal().size();
+                    if (at_entry_count != 1) {
+                        throw_assert(0);
+                    }
+
+                    // The number of type-table entries is calculated by
+                    // dividing the type-table size by the type-table encoding
+                    // size.
+                    uint64_t tt_size = type_table_addr - cs_table_end_addr - 2;
+                    uint64_t tt_encoding_size = lsda_type_table_entry_t<ptrsize>::get_tt_encoding_size(type_table_encoding);
+                    uint64_t tt_entry_count = tt_size / tt_encoding_size;
+
+                    uint64_t idx = 1;
+                    while (idx <= tt_entry_count) {
+                        if(parse_and_insert_tt_entry(idx++))
+                            return true;
+                    }
 				}
 				else 
 					throw_assert(0);
