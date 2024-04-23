@@ -1423,7 +1423,7 @@ bool lsda_type_table_entry_t<ptrsize>::parse(
 	const auto tt_encoding_sans_indirect = tt_encoding&(~DW_EH_PE_indirect);
 	const auto tt_encoding_sans_indir_sans_pcrel = static_cast<uint8_t>(tt_encoding_sans_indirect & (~DW_EH_PE_pcrel));
 	const auto has_pcrel = (tt_encoding & DW_EH_PE_pcrel) == DW_EH_PE_pcrel;
-    tt_encoding_size = get_tt_encoding_size(p_tt_encoding);
+	tt_encoding_size = get_tt_encoding_size(p_tt_encoding);
 
 	const auto orig_act_pos=uint64_t(tt_pos+(-static_cast<int64_t>(index)*tt_encoding_size));
 	auto act_pos=uint64_t(tt_pos+(-static_cast<int64_t>(index)*tt_encoding_size));
@@ -1703,39 +1703,39 @@ bool lsda_t<ptrsize>::parse_lsda(
 					if(parse_and_insert_tt_entry(type_filter))
 						return true;
 				}
-                else if(type_filter==-1)
+				else if(type_filter==-1)
 				{
-                    // When the type filter is -1, it means that the catch
-                    // handler can handle exceptions of any type.
-                    // It typically indicates a Dynamic Exception Specification
-                    // (DES) is in play. DES was a feature in C++ that allowed
-                    // a function to declare the types of exceptions it could
-                    // potentially throw.
-                    //
-                    // Although this feature is deprecated in C++11, for
-                    // binaries built with older versions of C++, we handle
-                    // such case here by parsing all the entries in the type
-                    // table.
+					// When the type filter is -1, it means that the catch
+					// handler can handle exceptions of any type.
+					// It typically indicates a Dynamic Exception Specification
+					// (DES) is in play. DES was a feature in C++ that allowed
+					// a function to declare the types of exceptions it could
+					// potentially throw.
+					//
+					// Although this feature is deprecated in C++11, for
+					// binaries built with older versions of C++, we handle
+					// such case here by parsing all the entries in the type
+					// table.
 
-                    // First of all, make sure that there is only one action
-                    // table entry.
-                    size_t at_entry_count = cs_tab_entry.getActionTableInternal().size();
-                    if (at_entry_count != 1) {
-                        throw_assert(0);
-                    }
+					// First of all, make sure that there is only one action
+					// table entry.
+					size_t at_entry_count = cs_tab_entry.getActionTableInternal().size();
+					if (at_entry_count != 1) {
+						throw_assert(0);
+					}
 
-                    // The number of type-table entries is calculated by
-                    // dividing the type-table size by the type-table encoding
-                    // size.
-                    uint64_t tt_size = type_table_addr - cs_table_end_addr - 2;
-                    uint64_t tt_encoding_size = lsda_type_table_entry_t<ptrsize>::get_tt_encoding_size(type_table_encoding);
-                    uint64_t tt_entry_count = tt_size / tt_encoding_size;
+					// The number of type-table entries is calculated by
+					// dividing the type-table size by the type-table encoding
+					// size.
+					uint64_t tt_size = type_table_addr - cs_table_end_addr - 2;
+					uint64_t tt_encoding_size = lsda_type_table_entry_t<ptrsize>::get_tt_encoding_size(type_table_encoding);
+					uint64_t tt_entry_count = tt_size / tt_encoding_size;
 
-                    uint64_t idx = 1;
-                    while (idx <= tt_entry_count) {
-                        if(parse_and_insert_tt_entry(idx++))
-                            return true;
-                    }
+					uint64_t idx = 1;
+					while (idx <= tt_entry_count) {
+						if(parse_and_insert_tt_entry(idx++))
+							return true;
+					}
 				}
 				else 
 					throw_assert(0);

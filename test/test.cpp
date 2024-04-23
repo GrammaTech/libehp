@@ -25,8 +25,8 @@ using namespace EHP;
 
 void usage(int argc, char* argv[])
 {
-    cout<<"Usage: "<<argv[0]<<" <program to print eh info> "
-        <<"[total-number-of-LSDA total-number-of-TypeTableEntries]\n";
+	cout<<"Usage: "<<argv[0]<<" <program to print eh info> "
+		<<"[total-number-of-LSDA total-number-of-TypeTableEntries]\n";
 	exit(1);
 }
 
@@ -56,7 +56,7 @@ void print_lps(const EHFrameParser_t* ehp)
 int main(int argc, char* argv[])
 {
 
-    if(argc!=2 && argc!=4)
+	if(argc!=2 && argc!=4)
 	{
 		usage(argc,argv);
 	}
@@ -69,44 +69,43 @@ int main(int argc, char* argv[])
 
 		print_lps(ehp.get());
 
+		if (argc == 4) {
+			int expected_lsda_count = atoi(argv[2]);
+			int expected_tt_entry_count = atoi(argv[3]);
 
-        if (argc == 4) {
-            int expected_lsda_count = atoi(argv[2]);
-            int expected_tt_entry_count = atoi(argv[3]);
+			int lsda_count = 0;
+			int tt_entry_count = 0;
+			for (const auto *fde : *(ehp->getFDEs()))
+			{
+				auto * lsda = fde->getLSDA();
+				if (lsda && fde->getLSDAAddress() != 0)
+				{
+					lsda_count++;
+					tt_entry_count += lsda->getTypeTable()->size();
+				}
+			}
 
-            int lsda_count = 0;
-            int tt_entry_count = 0;
-            for (const auto *fde : *(ehp->getFDEs()))
-            {
-                auto * lsda = fde->getLSDA();
-                if (lsda && fde->getLSDAAddress() != 0)
-                {
-                    lsda_count++;
-                    tt_entry_count += lsda->getTypeTable()->size();
-                }
-            }
-
-            if (expected_lsda_count == lsda_count
-                    && expected_tt_entry_count == tt_entry_count)
-            {
-                cout << "SUCCESS!\n"
-                     << "  count(LSDA)=" << lsda_count << endl
-                     << "  count(TypeTableEntries)=" << tt_entry_count << endl;
-            }
-            else
-            {
-                if (expected_lsda_count != lsda_count) {
-                    cout << "FAILED: count(LSDA)="
-                         << lsda_count << " != " << expected_lsda_count << endl;
-                }
-                if (expected_tt_entry_count != tt_entry_count) {
-                    cout << "FAILED: count(TypeTableEntries)="
-                         << tt_entry_count << " != " << expected_tt_entry_count
-                         << endl;
-                }
-                return -1;
-            }
-        }
+			if (expected_lsda_count == lsda_count
+				&& expected_tt_entry_count == tt_entry_count)
+			{
+				cout << "SUCCESS!\n"
+					 << "  count(LSDA)=" << lsda_count << endl
+					 << "  count(TypeTableEntries)=" << tt_entry_count << endl;
+			}
+			else
+			{
+				if (expected_lsda_count != lsda_count) {
+					cout << "FAILED: count(LSDA)="
+				 		 << lsda_count << " != " << expected_lsda_count << endl;
+				}
+				if (expected_tt_entry_count != tt_entry_count) {
+					cout << "FAILED: count(TypeTableEntries)="
+	 					 << tt_entry_count << " != " << expected_tt_entry_count
+						 << endl;
+				}
+				return -1;
+			}
+		}
 	}
 	catch(const exception& e )
 	{

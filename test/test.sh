@@ -35,7 +35,7 @@ function main()
 	./test.exe /bin/ls || cleanup 
 	./test.exe /bin/bash || cleanup 
 
-    ./test.exe ./test_des.exe 2 6 || cleanup
+ 	./test.exe ./test_des.exe 2 6 || cleanup
 
 	echo "test passed"
 	exit 0
